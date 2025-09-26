@@ -1,0 +1,4 @@
+nicegui
+reportlab
+PyPDF2
+tqdm

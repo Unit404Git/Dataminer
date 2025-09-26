@@ -1,0 +1,5 @@
+txtfiles_*
+pdfs_*
+__pycache__
+venv
+statfile.txt
