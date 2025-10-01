@@ -3,3 +3,4 @@ pdfs_*
 __pycache__
 venv
 statfile.txt
+.DS_Store
