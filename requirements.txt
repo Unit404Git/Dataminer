@@ -1,4 +1,4 @@
-nicegui
+PySide6
 reportlab
 PyPDF2
 tqdm

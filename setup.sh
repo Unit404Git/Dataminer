@@ -1,30 +1,27 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-# Check for Python3
-if ! command -v python3 &>/dev/null; then
-    echo "Python3 not found. Attempting to install with Homebrew..."
-    if command -v brew &>/dev/null; then
-        brew install python
-    else
-        echo "Homebrew not installed. Please install Python manually: https://www.python.org/downloads/"
-        exit 1
-    fi
+# 1) Python3
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "Python3 not found. Attempting to install with Homebrew..."
+  if command -v brew >/dev/null 2>&1; then
+    brew install python
+  else
+    echo "Homebrew not installed. Please install Python from https://www.python.org/downloads/ and re-run."
+    exit 1
+  fi
 fi
 
-# Create venv if not exists
+# 2) venv
 if [ ! -d "venv" ]; then
-    python3 -m venv venv
+  python3 -m venv venv
 fi
-
-# Activate venv
+# shellcheck disable=SC1091
 source venv/bin/activate
 
-# Upgrade pip
-pip3 install --upgrade pip
+# 3) pip + deps
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 
-# Install requirements
-pip3 install -r requirements.txt
-
-# Run app
-python3 main.py
+# 4) run
+python main_qt.py
