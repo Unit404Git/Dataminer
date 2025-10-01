@@ -21,7 +21,15 @@ REM 3) pip + deps
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
-REM 4) run
+REM 4) compile Qt resources -> resources_rc.py
+where pyside6-rcc >nul 2>nul
+if %errorlevel%==0 (
+    pyside6-rcc resources.qrc -o resources_rc.py
+) else (
+    python -m PySide6.scripts.pyside_tool rcc resources.qrc -o resources_rc.py
+)
+
+REM 5) run
 python main_qt.py
 
 endlocal

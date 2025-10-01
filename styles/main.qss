@@ -1,0 +1,17 @@
+QWidget {
+    background-color: #fafafa;
+    font-family: Arial;
+    font-size: 14px;
+}
+QLabel {
+    color: #333333;
+}
+QProgressBar {
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    text-align: center;
+}
+QProgressBar::chunk {
+    background-color: #4caf50;
+    width: 1px;
+}

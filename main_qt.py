@@ -1,15 +1,17 @@
-# main_qt.py
 import sys
 from PySide6.QtCore import QObject, Signal, Slot, QThread
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QFileDialog, QProgressBar, QMessageBox
 )
 from processor import process_directory
 
+import resources_rc  # Import the compiled resources
+
 
 class Worker(QObject):
-    progress = Signal(int, int, str)   # current, total, message
+    progress = Signal(int, int, str)
     finished = Signal()
     error = Signal(str)
 
@@ -31,25 +33,11 @@ class Worker(QObject):
             self.error.emit(str(e))
 
 
-class HelpWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Help")
-        layout = QVBoxLayout(self)
-        help_text = QLabel(
-            "1. Click 'Pick Directory' to select the root directory containing your data.\n"
-            "2. Click 'Start' to begin processing. Progress will be shown.\n"
-            "3. Click 'Exit' to close the application."
-        )
-        help_text.setWordWrap(True)
-        layout.addWidget(help_text)
-        self.resize(400, 200)
-
-
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Your App")
+        # self.setWindowIcon(QIcon("assets/app_icon.png"))
         self.selected_dir = None
         self.thread = None
         self.worker = None
@@ -58,8 +46,13 @@ class MainWindow(QWidget):
 
         # Directory row
         dir_row = QHBoxLayout()
-        self.pick_btn = QPushButton("Pick Directory")
+        self.pick_btn = QPushButton()
         self.pick_btn.clicked.connect(self.pick_directory)
+        self.pick_btn.setObjectName("testButton")   # wichtig für CSS
+        # self.pick_btn.setIcon(QIcon(":/assets/testbutton_normal.png"))
+        # Icon auf Button-Größe skalieren
+        # self.pick_btn.setIconSize(self.pick_btn.size())
+
         self.dir_label = QLabel("No directory selected.")
         dir_row.addWidget(self.pick_btn)
         dir_row.addWidget(self.dir_label)
@@ -75,23 +68,39 @@ class MainWindow(QWidget):
 
         # Action buttons
         action_row = QHBoxLayout()
-        self.start_btn = QPushButton("Start")
+
+        # Start Button
+        self.start_btn = QPushButton("START")
+        self.start_btn.setObjectName("startButton")   # wichtig für CSS
+        self.start_btn.setFixedSize(64, 64)
         self.start_btn.clicked.connect(self.start_processing)
-        self.exit_btn = QPushButton("Exit")
+
+        # Exit Button
+        self.exit_btn = QPushButton("EXIT")
+        self.exit_btn.setObjectName("exitButton")     # wichtig für CSS
+        self.exit_btn.setFixedSize(64, 64)
         self.exit_btn.clicked.connect(self.close)
-        self.help_btn = QPushButton("Help")
-        self.help_btn.clicked.connect(self.show_help)
-        action_row.addWidget(self.help_btn)
+
         action_row.addWidget(self.start_btn)
         action_row.addWidget(self.exit_btn)
         layout.addLayout(action_row)
 
-        self.resize(600, 160)
+        self.resize(600, 220)
 
-    def show_help(self):
-        help_window = HelpWindow()
-        help_window.show()
-        help_window.exec()
+        # CSS laden
+        self.apply_styles()
+
+    def apply_styles(self):
+        # add others as needed
+        files = ["styles/main.qss", "styles/testbutton.qss"]
+        css = ""
+        for f in files:
+            try:
+                with open(f, "r", encoding="utf-8") as h:
+                    css += h.read() + "\n"
+            except FileNotFoundError:
+                print(f"⚠️ Stylesheet not found: {f}")
+        self.setStyleSheet(css)
 
     def pick_directory(self):
         directory = QFileDialog.getExistingDirectory(self, "Select directory")
@@ -105,13 +114,11 @@ class MainWindow(QWidget):
                                 "Please select a directory first.")
             return
 
-        # Reset UI
         self.progress_bar.setValue(0)
         self.progress_label.setText("Starting...")
         self.start_btn.setEnabled(False)
         self.pick_btn.setEnabled(False)
 
-        # Threaded worker so UI stays responsive
         self.thread = QThread()
         self.worker = Worker()
         self.worker.moveToThread(self.thread)
@@ -121,7 +128,6 @@ class MainWindow(QWidget):
         self.worker.finished.connect(self.on_finished)
         self.worker.error.connect(self.on_error)
 
-        # Cleanup
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)

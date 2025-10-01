@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/">
+    <file>assets/testbutton_normal.png</file>
+    <file>assets/testbutton_hover.png</file>
+    
+    <!-- add more assets as needed -->
+
+  </qresource>
+</RCC>
