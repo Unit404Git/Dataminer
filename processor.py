@@ -1,6 +1,7 @@
 # processor.py
 import time
 from tqdm import tqdm
+import bigman
 
 
 def process_directory(directory: str):
@@ -10,6 +11,8 @@ def process_directory(directory: str):
       iterator: iterable[str]  # yields human-readable progress messages
     Replace the dummy loop with your real logic.
     """
+
+    bigman.main(directory)
 
     # Example: pretend work over 50 steps
     total = 50

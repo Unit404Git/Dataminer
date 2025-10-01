@@ -31,6 +31,21 @@ class Worker(QObject):
             self.error.emit(str(e))
 
 
+class HelpWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Help")
+        layout = QVBoxLayout(self)
+        help_text = QLabel(
+            "1. Click 'Pick Directory' to select the root directory containing your data.\n"
+            "2. Click 'Start' to begin processing. Progress will be shown.\n"
+            "3. Click 'Exit' to close the application."
+        )
+        help_text.setWordWrap(True)
+        layout.addWidget(help_text)
+        self.resize(400, 200)
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -64,11 +79,19 @@ class MainWindow(QWidget):
         self.start_btn.clicked.connect(self.start_processing)
         self.exit_btn = QPushButton("Exit")
         self.exit_btn.clicked.connect(self.close)
+        self.help_btn = QPushButton("Help")
+        self.help_btn.clicked.connect(self.show_help)
+        action_row.addWidget(self.help_btn)
         action_row.addWidget(self.start_btn)
         action_row.addWidget(self.exit_btn)
         layout.addLayout(action_row)
 
         self.resize(600, 160)
+
+    def show_help(self):
+        help_window = HelpWindow()
+        help_window.show()
+        help_window.exec()
 
     def pick_directory(self):
         directory = QFileDialog.getExistingDirectory(self, "Select directory")
