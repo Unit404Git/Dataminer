@@ -33,16 +33,58 @@ class Worker(QObject):
             self.error.emit(str(e))
 
 
+class HelpWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Help")
+        self.setGeometry(100, 100, 400, 300)
+        layout = QVBoxLayout()
+        help_label = QLabel(
+            "This is a help window. Provide useful information here.")
+        layout.addWidget(help_label)
+        self.setLayout(layout)
+        self.apply_styles()
+
+    def apply_styles(self):
+        # add others as needed
+        files = ["styles/main.qss", "styles/testbutton.qss"]
+        css = ""
+        for f in files:
+            try:
+                with open(f, "r", encoding="utf-8") as h:
+                    css += h.read() + "\n"
+            except FileNotFoundError:
+                print(f"⚠️ Stylesheet not found: {f}")
+        self.setStyleSheet(css)
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Your App")
-        # self.setWindowIcon(QIcon("assets/app_icon.png"))
+        self.setWindowTitle("Dataminer by Unit 404")
+        self.setWindowIcon(QIcon("assets/logo.png"))
         self.selected_dir = None
         self.thread = None
         self.worker = None
 
         layout = QVBoxLayout(self)
+
+        menubar_row = QHBoxLayout()
+
+        # File Button
+        self.file_btn = QPushButton("FILE")
+        self.file_btn.setObjectName("fileButton")     # wichtig für CSS
+        self.file_btn.setFixedSize(128, 32)
+        # self.file_btn.clicked.connect(self.show_file_dialog)  # Implement if needed
+
+        # Help Button
+        self.help_btn = QPushButton("HELP")
+        self.help_btn.setObjectName("helpButton")     # wichtig für CSS
+        self.help_btn.setFixedSize(128, 32)
+        self.help_btn.clicked.connect(self.show_help)
+
+        menubar_row.addWidget(self.help_btn)
+        layout.addLayout(menubar_row)
 
         # Directory row
         dir_row = QHBoxLayout()
@@ -149,6 +191,10 @@ class MainWindow(QWidget):
         self.progress_label.setText("Error")
         self.start_btn.setEnabled(True)
         self.pick_btn.setEnabled(True)
+
+    def show_help(self):
+        self.help_window = HelpWindow()
+        self.help_window.show()
 
 
 def main():

@@ -1,0 +1,16 @@
+
+#testButton {
+    border: none; 
+    /* 0 0 0 0 = keine 9-Slice-Ränder; 'stretch stretch' = strecken statt kacheln */
+    border-image: url(":/assets/testbutton_normal.png") 0 0 0 0 stretch stretch;
+    min-width: 96px;     /* anpassen: deine gewünschte Standardgröße */
+    min-height: 96px;
+}
+
+#testButton:hover {
+    border-image: url(":/assets/testbutton_hover.png") 0 0 0 0 stretch stretch;
+}
+
+#testButton:pressed {
+    border-image: url(":/assets/testbutton_hover.png") 0 0 0 0 stretch stretch;
+}
