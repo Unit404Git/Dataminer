@@ -1,9 +1,10 @@
 import sys
-from PySide6.QtCore import QObject, Signal, Slot, QThread
+from PySide6.QtCore import QObject, Signal, Slot, QThread, QEvent, QPoint, QTimer, Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QFileDialog, QProgressBar, QMessageBox
+    QPushButton, QLabel, QFileDialog, QProgressBar, QMessageBox,
+    QToolButton, QMenu, QDialog, QTextEdit
 )
 from processor import process_directory
 
@@ -33,6 +34,52 @@ class Worker(QObject):
             self.error.emit(str(e))
 
 
+class HoverMenuPushButton(QPushButton):
+    def __init__(self, text="", parent=None):
+        super().__init__(text, parent)
+        self._menu = QMenu(self)
+
+        # Timer für „nicht sofort schließen“ Verhalten
+        self._hide_timer = QTimer(self)
+        self._hide_timer.setInterval(200)
+        self._hide_timer.setSingleShot(True)
+        self._hide_timer.timeout.connect(self._maybe_hide)
+
+        self._menu.installEventFilter(self)
+        self.setMouseTracking(True)
+
+    def addAction(self, *args, **kwargs):
+        return self._menu.addAction(*args, **kwargs)
+
+    def addMenu(self, menu: QMenu):
+        return self._menu.addMenu(menu)
+
+    def enterEvent(self, event):
+        super().enterEvent(event)
+        self._hide_timer.stop()
+        self._show_menu()
+
+    def leaveEvent(self, event):
+        super().leaveEvent(event)
+        self._hide_timer.start()
+
+    def eventFilter(self, watched, event):
+        if watched is self._menu:
+            if event.type() == QEvent.Enter:
+                self._hide_timer.stop()
+            elif event.type() == QEvent.Leave:
+                self._hide_timer.start()
+        return super().eventFilter(watched, event)
+
+    def _show_menu(self):
+        pos = self.mapToGlobal(QPoint(0, self.height()))
+        self._menu.popup(pos)
+
+    def _maybe_hide(self):
+        if not (self.underMouse() or self._menu.underMouse()):
+            self._menu.hide()
+
+
 class HelpWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -58,6 +105,37 @@ class HelpWindow(QWidget):
         self.setStyleSheet(css)
 
 
+class LogWindow(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Log / Console Output")
+        self.resize(600, 400)
+
+        layout = QVBoxLayout(self)
+
+        self.text_edit = QTextEdit(self)
+        self.text_edit.setReadOnly(True)
+        layout.addWidget(self.text_edit)
+
+        close_btn = QPushButton("Schließen", self)
+        close_btn.clicked.connect(self.close)
+        layout.addWidget(close_btn)
+
+    def append_text(self, text: str):
+        self.text_edit.append(text)
+
+
+class EmittingStream(QObject):
+    textWritten = Signal(str)
+
+    def write(self, text):
+        if text.strip():  # nur wenn nicht leer
+            self.textWritten.emit(str(text))
+
+    def flush(self):
+        pass  # für Kompatibilität
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -67,15 +145,25 @@ class MainWindow(QWidget):
         self.thread = None
         self.worker = None
 
+        self.setObjectName("mainWindow")  # wichtig für CSS
+
         layout = QVBoxLayout(self)
 
         menubar_row = QHBoxLayout()
+        menubar_row.setAlignment(Qt.AlignLeft)
 
         # File Button
-        self.file_btn = QPushButton("FILE")
-        self.file_btn.setObjectName("fileButton")     # wichtig für CSS
+        self.file_btn = HoverMenuPushButton(self)
+        self.file_btn.setObjectName("fileButton")
+        # skaliert ggf. dein PNG (siehe Stylesheet unten)
         self.file_btn.setFixedSize(128, 32)
-        # self.file_btn.clicked.connect(self.show_file_dialog)  # Implement if needed
+        menubar_row.addWidget(self.file_btn)
+
+        # Menüeinträge
+        self.file_btn.addAction(
+            "Option A", lambda: QMessageBox.information(self, "Aktion", "A gewählt"))
+        self.file_btn.addAction(
+            "Option B", lambda: QMessageBox.information(self, "Aktion", "B gewählt"))
 
         # Help Button
         self.help_btn = QPushButton("HELP")
@@ -84,6 +172,15 @@ class MainWindow(QWidget):
         self.help_btn.clicked.connect(self.show_help)
 
         menubar_row.addWidget(self.help_btn)
+
+        self.license_btn = QPushButton("LICENSE")
+        self.license_btn.setObjectName("licenseButton")  # wichtig für CSS
+        self.license_btn.setFixedSize(128, 32)
+        self.license_btn.clicked.connect(
+            lambda: QMessageBox.information(self, "License", "MIT License"))
+
+        menubar_row.addWidget(self.license_btn)
+
         layout.addLayout(menubar_row)
 
         # Directory row
@@ -91,9 +188,8 @@ class MainWindow(QWidget):
         self.pick_btn = QPushButton()
         self.pick_btn.clicked.connect(self.pick_directory)
         self.pick_btn.setObjectName("testButton")   # wichtig für CSS
-        # self.pick_btn.setIcon(QIcon(":/assets/testbutton_normal.png"))
-        # Icon auf Button-Größe skalieren
-        # self.pick_btn.setIconSize(self.pick_btn.size())
+        with open("styles/testbutton.qss", "r", encoding="utf-8") as f:
+            self.pick_btn.setStyleSheet(f.read())
 
         self.dir_label = QLabel("No directory selected.")
         dir_row.addWidget(self.pick_btn)
@@ -130,7 +226,7 @@ class MainWindow(QWidget):
         self.resize(600, 220)
 
         # CSS laden
-        self.apply_styles()
+        # self.apply_styles()
 
     def apply_styles(self):
         # add others as needed
