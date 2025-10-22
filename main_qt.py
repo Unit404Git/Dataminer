@@ -39,9 +39,12 @@ class HoverMenuPushButton(QPushButton):
         super().__init__(text, parent)
         self._menu = QMenu(self)
 
+        with open("styles/buttons.qss", "r", encoding="utf-8") as f:
+            self._menu.setStyleSheet(f.read())
+
         # Timer für „nicht sofort schließen“ Verhalten
         self._hide_timer = QTimer(self)
-        self._hide_timer.setInterval(200)
+        self._hide_timer.setInterval(100)
         self._hide_timer.setSingleShot(True)
         self._hide_timer.timeout.connect(self._maybe_hide)
 
@@ -155,8 +158,7 @@ class MainWindow(QWidget):
         # File Button
         self.file_btn = HoverMenuPushButton(self)
         self.file_btn.setObjectName("fileButton")
-        # skaliert ggf. dein PNG (siehe Stylesheet unten)
-        self.file_btn.setFixedSize(128, 32)
+        self.file_btn.setFixedSize(256, 64)
         menubar_row.addWidget(self.file_btn)
 
         # Menüeinträge
@@ -166,16 +168,16 @@ class MainWindow(QWidget):
             "Option B", lambda: QMessageBox.information(self, "Aktion", "B gewählt"))
 
         # Help Button
-        self.help_btn = QPushButton("HELP")
+        self.help_btn = QPushButton()
         self.help_btn.setObjectName("helpButton")     # wichtig für CSS
-        self.help_btn.setFixedSize(128, 32)
+        self.help_btn.setFixedSize(256, 64)
         self.help_btn.clicked.connect(self.show_help)
 
         menubar_row.addWidget(self.help_btn)
 
-        self.license_btn = QPushButton("LICENSE")
+        self.license_btn = QPushButton()
         self.license_btn.setObjectName("licenseButton")  # wichtig für CSS
-        self.license_btn.setFixedSize(128, 32)
+        self.license_btn.setFixedSize(256, 64)
         self.license_btn.clicked.connect(
             lambda: QMessageBox.information(self, "License", "MIT License"))
 
@@ -185,11 +187,13 @@ class MainWindow(QWidget):
 
         # Directory row
         dir_row = QHBoxLayout()
+
         self.pick_btn = QPushButton()
         self.pick_btn.clicked.connect(self.pick_directory)
-        self.pick_btn.setObjectName("testButton")   # wichtig für CSS
-        with open("styles/testbutton.qss", "r", encoding="utf-8") as f:
-            self.pick_btn.setStyleSheet(f.read())
+        self.pick_btn.setFixedSize(256, 64)
+        self.pick_btn.setObjectName("selectFolderButton")   # wichtig für CSS
+        # with open("styles/testbutton.qss", "r", encoding="utf-8") as f:
+        #    self.pick_btn.setStyleSheet(f.read())
 
         self.dir_label = QLabel("No directory selected.")
         dir_row.addWidget(self.pick_btn)
@@ -208,29 +212,30 @@ class MainWindow(QWidget):
         action_row = QHBoxLayout()
 
         # Start Button
-        self.start_btn = QPushButton("START")
+        self.start_btn = QPushButton()
         self.start_btn.setObjectName("startButton")   # wichtig für CSS
-        self.start_btn.setFixedSize(64, 64)
+        self.start_btn.setFixedSize(96, 96)
         self.start_btn.clicked.connect(self.start_processing)
 
         # Exit Button
-        self.exit_btn = QPushButton("EXIT")
+        self.exit_btn = QPushButton()
+        self.exit_btn.clicked.connect(self.close)
         self.exit_btn.setObjectName("exitButton")     # wichtig für CSS
         self.exit_btn.setFixedSize(64, 64)
-        self.exit_btn.clicked.connect(self.close)
 
         action_row.addWidget(self.start_btn)
         action_row.addWidget(self.exit_btn)
         layout.addLayout(action_row)
 
-        self.resize(600, 220)
+        self.resize(800, 640)
 
         # CSS laden
-        # self.apply_styles()
+        self.apply_styles()
 
     def apply_styles(self):
         # add others as needed
-        files = ["styles/main.qss", "styles/testbutton.qss"]
+        files = ["styles/main.qss", "styles/buttons.qss"]
+        # files = ["styles/buttons.qss"]
         css = ""
         for f in files:
             try:

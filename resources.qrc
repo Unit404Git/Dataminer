@@ -3,6 +3,23 @@
     <file>assets/testbutton_normal.png</file>
     <file>assets/testbutton_hover.png</file>
     
+    <file>assets/close_button_NORMAL.png</file>
+    <file>assets/close_button_HOVER.png</file>
+
+    <file>assets/help_NORMAL.png</file>
+    <file>assets/help_HOVER.png</file>
+
+    <file>assets/start_NORMAL.png</file>
+    <file>assets/start_HOVER.png</file>
+
+    <file>assets/select_folder_NORMAL.png</file>
+    <file>assets/select_folder_HOVER.png</file>
+
+    <file>assets/license_NORMAL.png</file>
+    <file>assets/license_HOVER.png</file>
+
+
+
     <!-- add more assets as needed -->
 
   </qresource>
