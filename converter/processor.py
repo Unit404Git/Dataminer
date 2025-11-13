@@ -1,7 +1,7 @@
 # processor.py
 import time
 from tqdm import tqdm
-import bigman
+import converter.bigman as bigman
 
 
 def process_directory(directory: str):
