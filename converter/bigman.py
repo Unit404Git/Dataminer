@@ -5,6 +5,16 @@ from tkinter.filedialog import askdirectory
 from tqdm import tqdm
 import create_pdf_file
 import utils
+import sys
+from pathlib import Path
+
+# Import progress tracking from shared module in app directory
+try:
+    sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
+    from progress import update_progress
+except ImportError:
+    def update_progress(increment):
+        pass  # Fallback if not running from GUI
 
 
 def main(root_directory):
@@ -41,6 +51,7 @@ def main(root_directory):
         total_data_size = 0
         chunk_size = 10000  # Adjust as needed
         for path in tqdm(file_paths):
+            update_progress(1)
             for i, chunk in enumerate(read_wav_in_chunks(path, chunk_size)):
                 name, ext = os.path.splitext(path)
                 new_file_path = f"{name}_{i}.txt"

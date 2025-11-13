@@ -1,0 +1,65 @@
+/* Main window and central widget */
+QWidget#central_widget {
+    background-color: #fafafa;
+}
+
+/* Status label */
+QLabel#status_label {
+    color: #333333;
+}
+
+/* Directory input field */
+QLineEdit#directory_field {
+    color: #333333;
+    background-color: white;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+/* Console display */
+QTextEdit#console_display {
+    color: #333333;
+    background-color: white;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    padding: 5px;
+    font-family: "Courier New", monospace;
+    font-size: 10px;
+}
+
+/* Log file display */
+QTextEdit#log_display {
+    color: #333333;
+    background-color: white;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    padding: 5px;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+}
+
+/* Progress bar */
+QProgressBar#progress_bar {
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    text-align: center;
+    color: #333333;
+    background-color: white;
+}
+
+QProgressBar#progress_bar::chunk {
+    background-color: #4caf50;
+    border-radius: 3px;
+}
+
+/* Hover buttons */
+QPushButton#hover_button {
+    border: none;
+    background-color: transparent;
+}
+
+QPushButton#hover_button:focus {
+    outline: none;
+    border: none;
+}

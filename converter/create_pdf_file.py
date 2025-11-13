@@ -1,9 +1,23 @@
 import os
-from reportlab.lib.pagesizes import LETTER
+from reportlab.lib.pagesizes import letter as LETTER
 from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
 from tqdm import tqdm
 import textwrap
-from PyPDF2 import PdfReader
+from PyPDF2 import PdfWriter, PdfReader
+import sys
+from pathlib import Path
+
+# Import progress tracking from shared module in app directory
+try:
+    sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
+    from progress import update_progress, update_progress_2
+except ImportError:
+    def update_progress(increment):
+        pass  # Fallback if not running from GUI
+
+    def update_progress_2(increment):
+        pass  # Fallback if not running from GUI
 
 
 def main(file_struct):
@@ -12,15 +26,12 @@ def main(file_struct):
     cwd = os.getcwd()
 
     stat_file = f"{cwd}/statfile.txt"
-    
 
     for directory, files in file_struct.items():
-        
-        
+
         in_dir = f"{cwd}/txtfiles_{directory}"
         out_dir = f"{cwd}/pdfs_{directory}"
 
-        
         create_dir = os.path.isdir(out_dir)
         if not create_dir:
             os.system(f"mkdir {cwd}/pdfs_{directory}")
@@ -28,21 +39,23 @@ def main(file_struct):
             rm_cmd = f"rm -rf {cwd}/pdfs_{directory}"
             os.system(rm_cmd)
             os.system(f"mkdir {cwd}/pdfs_{directory}")
-    
+
         if os.path.isdir(in_dir):
             total_data_size = batch_convert_txt_to_pdf(in_dir, out_dir)
-            print(f"All .txt files have been converted and saved in '{out_dir}'.")
+            print(
+                f"All .txt files have been converted and saved in '{out_dir}'.")
             data_size_total_mb = total_data_size/1048576
             with open(stat_file, "at") as statwriter:
-                statwriter.write(f"{directory} --- contained {data_size_total_mb}MB as pdf\n")
-            
+                statwriter.write(
+                    f"{directory} --- contained {data_size_total_mb}MB as pdf\n")
+
         else:
             print(f"Invalid input directory. {in_dir}")
 
         if not out_dir:
             print("No folder selected.")
             return []
-        
+
         file_paths = []
         for dirpath, _, filenames in os.walk(out_dir):
             for file in filenames:
@@ -53,10 +66,8 @@ def main(file_struct):
             page_count += count_pages(path)
 
         with open(stat_file, "at") as statwriter:
-            statwriter.write(f"{directory} --- contained {page_count} pdf-pages\n")
-        
-
-
+            statwriter.write(
+                f"{directory} --- contained {page_count} pdf-pages\n")
 
 
 def get_all_file_paths():
@@ -84,6 +95,7 @@ def get_all_file_paths():
 def count_pages(path):
     reader = PdfReader(path)
     return len(reader.pages)
+
 
 def convert_txt_to_pdf(txt_file_path, output_folder):
     """
@@ -121,16 +133,16 @@ def convert_txt_to_pdf(txt_file_path, output_folder):
     with open(txt_file_path, "r", encoding="utf-8") as txt_file:
         for line in txt_file:
             chunk_size = 10000  # Process 10,000 characters at a time
-            chunks = [line[i:i + chunk_size] for i in range(0, len(line), chunk_size)]
+            chunks = [line[i:i + chunk_size]
+                      for i in range(0, len(line), chunk_size)]
 
             wrapped_data = []
             for chunk in chunks:
-                wrapped_data.extend(textwrap.wrap(chunk, width=70, break_long_words=True, break_on_hyphens=True))
-
+                wrapped_data.extend(textwrap.wrap(
+                    chunk, width=70, break_long_words=True, break_on_hyphens=True))
 
             for wrap in wrapped_data:
-        
-        
+
                 # Check if the line fits on the page, if not, create a new page
                 if current_y < margin:
                     c.showPage()
@@ -145,6 +157,7 @@ def convert_txt_to_pdf(txt_file_path, output_folder):
     c.save()
     return pdf_file_path
 
+
 def batch_convert_txt_to_pdf(input_folder, output_folder):
     """
     Converts all .txt files in the input folder to PDFs in the output folder.
@@ -155,11 +168,16 @@ def batch_convert_txt_to_pdf(input_folder, output_folder):
     """
     data_size_total = 0
     for dirpath, _, filenames in os.walk(input_folder):
+        # update second progress bar
+
         for file in tqdm(filenames):
+            update_progress_2(2)
             if file.lower().endswith(".txt"):
                 txt_file_path = os.path.join(dirpath, file)
-                data_size_total += os.path.getsize(convert_txt_to_pdf(txt_file_path, output_folder))
+                data_size_total += os.path.getsize(
+                    convert_txt_to_pdf(txt_file_path, output_folder))
     return data_size_total
+
 
 if __name__ == "__main__":
     main()
