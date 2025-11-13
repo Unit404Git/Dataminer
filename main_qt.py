@@ -1,10 +1,10 @@
 import sys
 from PySide6.QtCore import QObject, Signal, Slot, QThread, QEvent, QPoint, QTimer, Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QFileDialog, QProgressBar, QMessageBox,
-    QToolButton, QMenu, QDialog, QTextEdit
+    QToolButton, QMenuBar, QDialog, QTextEdit
 )
 from processor import process_directory
 
@@ -126,6 +126,26 @@ class MainWindow(QWidget):
         layout.addWidget(self.progress_label)
         layout.addWidget(self.progress_bar)
 
+        # ---- Create the menu bar ----
+        # On most platforms you can just use self.menuBar()
+        menu_bar = QMenuBar(self)  # returns a QMenuBar instance
+        layout.setMenuBar(menu_bar)
+
+        # ----- File menu -----
+        file_menu = menu_bar.addMenu("&File")
+
+        exit_action = QAction("Exit", self)
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+        # ----- Help menu -----
+        help_menu = menu_bar.addMenu("&Help")
+
+        help_action = QAction("Help", self)
+        help_action.triggered.connect(self.show_help)
+        help_menu.addAction(help_action)
+
         # Action buttons
         action_row = QHBoxLayout()
 
@@ -149,6 +169,18 @@ class MainWindow(QWidget):
 
         # CSS laden
         self.apply_styles()
+
+    # ----- Slots for actions -----
+    def new_file(self):
+        self.editor.clear()
+
+    def open_file(self):
+        QMessageBox.information(
+            self, "Open", "You clicked Open (not implemented).")
+
+    def show_about(self):
+        QMessageBox.about(
+            self, "About", "This is a simple PySide6 menu bar example.")
 
     def apply_styles(self):
         # add others as needed
