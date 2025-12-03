@@ -18,6 +18,7 @@ from PySide6.QtGui import QIcon, QPixmap, QColor
 from PySide6.QtCore import Qt, QSize, QEvent, QThread
 import sys
 import importlib.util
+import subprocess
 from pathlib import Path
 
 # Add converter directory to path so we can import bigman
@@ -111,6 +112,52 @@ class LogFileWindow(QMainWindow):
         self.setCentralWidget(text_display)
 
 
+class TutorialWindow(QMainWindow):
+    """Window to display the tutorial."""
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Tutorial")
+        self.setGeometry(250, 250, 700, 500)
+
+        # Create text display
+        text_display = QTextEdit()
+        text_display.setReadOnly(True)
+        text_display.setObjectName("tutorial_display")
+
+        # Set placeholder tutorial text
+        tutorial_text = """Welcome to the Dataminer App Tutorial!
+
+1. Select Folder:
+   Click the 'Select Folder' button to choose a directory containing audio files (.wav)
+   that you want to convert to text and then to PDF.
+
+2. Start Processing:
+   Once a folder is selected, click the 'Start' button to begin the conversion process.
+   The app will:
+   - Convert audio files to text using the first progress bar
+   - Convert the generated text files to PDF using the second progress bar
+
+3. Monitor Progress:
+   - The first progress bar shows audio-to-text conversion progress
+   - The second progress bar shows text-to-PDF conversion progress
+   - Console output displays detailed processing information
+
+4. View Results:
+   - Text files are saved in 'txtfiles_*' directories
+   - PDF files are saved in 'pdfs_*' directories
+   - Click 'Show Log File' to view processing statistics
+
+5. Cleanup:
+   - Click the 'Cleanup' button to remove all generated files and directories
+   - This will delete all txt, pdf, and log files
+
+For more help, visit the Help menu or check the documentation."""
+        text_display.setText(tutorial_text)
+
+        self.setCentralWidget(text_display)
+
+
 class HoverButton(QPushButton):
     """Custom button that changes appearance on hover."""
 
@@ -185,6 +232,16 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout()
 
+        # Tutorial link at the top
+        tutorial_link = QLabel("Tutorial")
+        tutorial_link.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        tutorial_link.setObjectName("tutorial_link")
+        tutorial_link.setStyleSheet(
+            "color: #4caf50; text-decoration: underline; cursor: pointer; font-weight: bold;")
+        tutorial_link.setCursor(Qt.CursorShape.PointingHandCursor)
+        tutorial_link.mousePressEvent = lambda event: self.on_tutorial_clicked()
+        layout.addWidget(tutorial_link)
+
         # Top row: Select folder and Start buttons
         top_buttons_layout = QHBoxLayout()
 
@@ -257,13 +314,19 @@ class MainWindow(QMainWindow):
         self.progress_bar_2.setMinimumHeight(25)
         layout.addWidget(self.progress_bar_2)
 
-        # Bottom row: Show log file and Exit buttons
+        # Bottom row: Show log file, Cleanup, and Exit buttons
         bottom_buttons_layout = QHBoxLayout()
 
         # Show log file button with hover effect
         self.show_log_button = HoverButton("show_log_file", self.assets_dir)
         self.show_log_button.clicked.connect(self.on_show_log_file)
         bottom_buttons_layout.addWidget(self.show_log_button)
+
+        # Cleanup button with hover effect
+        self.cleanup_button = HoverButton(
+            "square_button", self.assets_dir, width=100, height=50)
+        self.cleanup_button.clicked.connect(self.on_cleanup)
+        bottom_buttons_layout.addWidget(self.cleanup_button)
 
         # Exit button with hover effect
         self.exit_button = HoverButton(
@@ -375,6 +438,27 @@ class MainWindow(QMainWindow):
         print(f"Opening log file: {statfile_path}")
         self.log_window = LogFileWindow(statfile_path)
         self.log_window.show()
+
+    def on_tutorial_clicked(self):
+        """Handle tutorial link click."""
+        self.tutorial_window = TutorialWindow()
+        self.tutorial_window.show()
+
+    def on_cleanup(self):
+        """Handle cleanup button click - execute cleanup.sh script."""
+        cleanup_script = Path(__file__).parent.parent / "setup" / "cleanup.sh"
+        self.status_label.setText("Running cleanup...")
+        print(f"Executing cleanup script: {cleanup_script}")
+        try:
+            subprocess.run(["bash", str(cleanup_script)], check=True)
+            self.status_label.setText("Cleanup completed!")
+            print("Cleanup completed successfully")
+        except subprocess.CalledProcessError as e:
+            self.status_label.setText(f"Cleanup error: {str(e)}")
+            print(f"Cleanup script error: {e}")
+        except Exception as e:
+            self.status_label.setText(f"Error running cleanup: {str(e)}")
+            print(f"Error running cleanup script: {e}")
 
     def on_select_folder(self):
         """Handle select folder button click."""

@@ -11,12 +11,15 @@ from pathlib import Path
 # Import progress tracking from shared module in app directory
 try:
     sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
-    from progress import update_progress, update_progress_2
+    from progress import update_progress, update_progress_2, set_progress_2
 except ImportError:
     def update_progress(increment):
         pass  # Fallback if not running from GUI
 
     def update_progress_2(increment):
+        pass  # Fallback if not running from GUI
+
+    def set_progress_2(value):
         pass  # Fallback if not running from GUI
 
 
@@ -166,16 +169,23 @@ def batch_convert_txt_to_pdf(input_folder, output_folder):
         input_folder (str): Folder containing .txt files.
         output_folder (str): Folder to save the generated PDFs.
     """
+    # Count total .txt files for percentage-based progress
+    total_txt_files = 0
+    for dirpath, _, filenames in os.walk(input_folder):
+        total_txt_files += len(filenames)
+
+    processed_files = 0
     data_size_total = 0
     for dirpath, _, filenames in os.walk(input_folder):
         # update second progress bar
-
         for file in tqdm(filenames):
-            update_progress_2(2)
-            if file.lower().endswith(".txt"):
-                txt_file_path = os.path.join(dirpath, file)
-                data_size_total += os.path.getsize(
-                    convert_txt_to_pdf(txt_file_path, output_folder))
+            processed_files += 1
+            progress_pct = int((processed_files / total_txt_files)
+                               * 100) if total_txt_files > 0 else 0
+            set_progress_2(progress_pct)
+            txt_file_path = os.path.join(dirpath, file)
+            data_size_total += os.path.getsize(
+                convert_txt_to_pdf(txt_file_path, output_folder))
     return data_size_total
 
 
