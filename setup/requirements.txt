@@ -3,3 +3,4 @@ reportlab
 PyPDF2
 tqdm
 pyinstaller
+Pillow

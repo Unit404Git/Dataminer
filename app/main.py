@@ -22,6 +22,7 @@ import sys
 import importlib.util
 import subprocess
 import os
+import platform
 from pathlib import Path
 
 def get_resource_path(relative_path):
@@ -1146,7 +1147,13 @@ def main():
     app.setOrganizationDomain("unit404.dataminer")
     
     # Set application icon
-    icon_path = get_resource_path("assets/logo.png")
+    if platform.system() == "Darwin":
+        icon_path = get_resource_path("assets/Dataminer.icns")
+    elif platform.system() == "Windows":
+        icon_path = get_resource_path("assets/Dataminer.ico")
+    else:
+        icon_path = get_resource_path("assets/Dataminer.png")
+    
     app.setWindowIcon(QIcon(str(icon_path)))
     
     # Load stylesheet from CSS file

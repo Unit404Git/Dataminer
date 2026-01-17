@@ -21,23 +21,26 @@ def run_command(cmd, cwd=None):
     return result
 
 def create_icon():
-    """Create app icon from existing assets if needed."""
-    assets_dir = Path("assets")
-    if not assets_dir.exists():
-        return
+    """Create app icons for the current platform."""
+    print("Creating app icons...")
     
-    # For macOS, create .icns if we have a PNG
-    if platform.system() == "Darwin":
-        png_files = list(assets_dir.glob("*.png"))
-        if png_files and not (assets_dir / "icon.icns").exists():
-            print("Creating macOS icon from PNG...")
-            try:
-                # Use the first PNG found as icon
-                icon_src = png_files[0]
-                # This would require iconutil (macOS) or PIL for cross-platform
-                print(f"Note: Convert {icon_src} to icon.icns manually for better results")
-            except Exception as e:
-                print(f"Could not create icon: {e}")
+    # Install Pillow if not available
+    try:
+        from PIL import Image
+    except ImportError:
+        print("Installing Pillow for icon creation...")
+        run_command([sys.executable, "-m", "pip", "install", "Pillow"])
+    
+    # Run icon creation script
+    try:
+        result = subprocess.run([sys.executable, "create_icon.py"], 
+                          capture_output=True, text=True, cwd=Path(__file__).parent)
+        if result.returncode == 0:
+            print("✅ Icons created successfully")
+        else:
+            print(f"❌ Icon creation failed: {result.stderr}")
+    except Exception as e:
+        print(f"❌ Error running icon creation: {e}")
 
 def build_executable():
     """Build the executable using PyInstaller."""
@@ -470,6 +473,9 @@ def create_appimage():
         return
     
     print("Creating AppImage for Linux...")
+    
+    # Set application icon
+    icon_path = get_resource_path("assets/Dataminer.icns") if platform.system() == "Darwin" else get_resource_path("assets/Dataminer.ico") if platform.system() == "Windows" else get_resource_path("assets/Dataminer.png")
     
     exe_path = Path("dist/Dataminer")
     if not exe_path.exists():
