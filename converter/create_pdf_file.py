@@ -24,7 +24,7 @@ except ImportError:
 
 
 def main(file_struct):
-    print("hello")
+    print("Creating PDFs...")
 
     cwd = os.getcwd()
 

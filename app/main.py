@@ -916,7 +916,7 @@ class MainWindow(QMainWindow):
                 progress.set_progress_2(0)
             except Exception:
                 pass
-            print(f"Starting bigman with directory: {directory_path}")
+            print(f"Starting file conversion with directory: {directory_path}")
             try:
                 # Run bigman in a background thread to keep UI responsive
                 bigman_path = Path(__file__).parent.parent / \

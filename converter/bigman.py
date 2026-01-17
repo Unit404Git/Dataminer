@@ -18,7 +18,7 @@ except ImportError:
 
 
 def main(root_directory, file_types=None):
-    print("bigman in da house")
+    print("Conversion started")
 
     # Default to common audio formats if not specified
     if file_types is None:
