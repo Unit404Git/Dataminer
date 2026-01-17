@@ -8,18 +8,27 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QLabel,
-    QMenu,
     QFileDialog,
     QLineEdit,
     QTextEdit,
     QProgressBar,
+    QCheckBox,
+    QMessageBox,
 )
-from PySide6.QtGui import QIcon, QPixmap, QColor
-from PySide6.QtCore import Qt, QSize, QEvent, QThread
+
+from PySide6.QtCore import Qt, QThread, QEvent
+from PySide6.QtGui import QIcon, QMouseEvent
 import sys
 import importlib.util
 import subprocess
+import os
 from pathlib import Path
+
+# Add converter directory to path so we can import bigman
+sys.path.insert(0, str(Path(__file__).parent.parent / "converter"))
+
+
+
 
 # Add converter directory to path so we can import bigman
 sys.path.insert(0, str(Path(__file__).parent.parent / "converter"))
@@ -86,6 +95,174 @@ def load_stylesheet(app, css_file_path):
         print(f"Warning: Stylesheet file not found: {css_file_path}")
 
 
+class HelpWindow(QMainWindow):
+    """Custom help window with neomorphism styling and custom title bar."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Set window flags for custom title bar
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint | 
+            Qt.WindowType.WindowStaysOnTopHint |
+            Qt.WindowType.Tool
+        )
+        
+        # Set window attributes for rounded corners
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, False)
+        
+        # Drag functionality variables
+        self.drag_position = None
+        self.is_dragging = False
+
+        # Create custom title bar
+        title_layout = self._create_title_bar()
+
+        # Window title
+        title_label = QLabel("Help - Unit404 Dataminer")
+        title_label.setObjectName("title_label")
+        title_label.setStyleSheet("""
+            QLabel#title_label {
+                color: #4a4a4a;
+                font-weight: 600;
+                font-size: 14px;
+                padding: 0px 15px;
+                background: transparent;
+            }
+        """)
+        
+        # Window controls
+        minimize_button = QPushButton("─")
+        minimize_button.setObjectName("window_control minimize")
+        minimize_button.setFixedSize(30, 30)
+        minimize_button.clicked.connect(self.showMinimized)
+        
+        maximize_button = QPushButton("□")
+        maximize_button.setObjectName("window_control maximize")
+        maximize_button.setFixedSize(30, 30)
+        maximize_button.clicked.connect(self._toggle_maximize)
+        
+        close_button = QPushButton("✕")
+        close_button.setObjectName("window_control close")
+        close_button.setFixedSize(30, 30)
+        close_button.clicked.connect(self.close)
+        
+        # Add to layout
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        title_layout.addWidget(minimize_button)
+        title_layout.addWidget(maximize_button)
+        title_layout.addWidget(close_button)
+        
+        self.title_bar.setLayout(title_layout)
+        
+        # Create content widget
+        central_widget = QWidget()
+        central_widget.setObjectName("central_widget")
+        
+        layout = QVBoxLayout()
+        
+        layout.addWidget(self.title_bar)
+
+        # Help content
+        help_label = QLabel("How can we help you?")
+        help_label.setObjectName("help_title")
+        help_label.setStyleSheet("""
+            QLabel#help_title {
+                color: #4a4a4a;
+                font-weight: 600;
+                font-size: 16px;
+                padding: 20px;
+                background: transparent;
+            }
+        """)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        
+        tutorial_button = QPushButton("View Tutorial")
+        tutorial_button.setObjectName("help_button")
+        tutorial_button.clicked.connect(self.open_tutorial)
+        
+        email_button = QPushButton("Email Support")
+        email_button.setObjectName("help_button")
+        email_button.clicked.connect(self.open_email)
+        
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setObjectName("help_button")
+        cancel_button.clicked.connect(self.close)
+        
+        button_layout.addStretch()
+        button_layout.addWidget(tutorial_button)
+        button_layout.addWidget(email_button)
+        button_layout.addWidget(cancel_button)
+        button_layout.addStretch()
+        
+        layout.addWidget(help_label)
+        layout.addLayout(button_layout)
+        
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
+        
+        # Store parent reference for tutorial
+        self.parent_window = parent
+
+    def _create_title_bar(self):
+        """Create custom title bar for dragging."""
+        self.title_bar = QWidget()
+        self.title_bar.setObjectName("title_bar")
+        self.title_bar.setFixedHeight(40)
+        
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(0)
+        
+        return title_layout
+
+    def _toggle_maximize(self):
+        """Toggle between maximize and restore."""
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMaximized()
+
+    def open_tutorial(self):
+        """Open tutorial window."""
+        if self.parent_window:
+            self.parent_window.open_tutorial_window()
+        self.close()
+
+    def open_email(self):
+        """Open email client."""
+        import subprocess
+        try:
+            subprocess.run(["open", "mailto:unit@404.net"])
+        except:
+            print("Could not open email client")
+        self.close()
+
+    def mousePressEvent(self, event: QMouseEvent):
+        """Handle mouse press for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drag_position = event.globalPosition().toPoint()
+            self.is_dragging = True
+
+    def mouseMoveEvent(self, event: QMouseEvent):
+        """Handle mouse move for dragging."""
+        if self.is_dragging and self.drag_position is not None:
+            delta = event.globalPosition().toPoint() - self.drag_position
+            new_pos = self.pos() + delta
+            self.move(new_pos)
+            self.drag_position = event.globalPosition().toPoint()
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        """Handle mouse release for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.is_dragging = False
+            self.drag_position = None
+
+
 class LogFileWindow(QMainWindow):
     """Window to display the statfile content."""
 
@@ -93,6 +270,70 @@ class LogFileWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Log File Viewer")
         self.setGeometry(200, 200, 600, 400)
+        
+        # Set window flags for proper behavior
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint | 
+            Qt.WindowType.WindowStaysOnTopHint |
+            Qt.WindowType.Tool
+        )
+        
+        # Set window attributes for rounded corners
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, False)
+        
+        # Drag functionality variables
+        self.drag_position = None
+        self.is_dragging = False
+
+        # Create custom title bar
+        title_layout = self._create_title_bar()
+
+        # Window title
+        title_label = QLabel("Log File Viewer")
+        title_label.setObjectName("title_label")
+        title_label.setStyleSheet("""
+            QLabel#title_label {
+                color: #4a4a4a;
+                font-weight: 600;
+                font-size: 14px;
+                padding: 0px 15px;
+                background: transparent;
+            }
+        """)
+        
+        # Window controls
+        minimize_button = QPushButton("─")
+        minimize_button.setObjectName("window_control minimize")
+        minimize_button.setFixedSize(30, 30)
+        minimize_button.clicked.connect(self.showMinimized)
+        
+        maximize_button = QPushButton("□")
+        maximize_button.setObjectName("window_control maximize")
+        maximize_button.setFixedSize(30, 30)
+        maximize_button.clicked.connect(self._toggle_maximize)
+        
+        close_button = QPushButton("✕")
+        close_button.setObjectName("window_control close")
+        close_button.setFixedSize(30, 30)
+        close_button.clicked.connect(self.close)
+        
+        # Add to layout
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        title_layout.addWidget(minimize_button)
+        title_layout.addWidget(maximize_button)
+        title_layout.addWidget(close_button)
+        
+        self.title_bar.setLayout(title_layout)
+        
+        # Create content widget
+        central_widget = QWidget()
+        central_widget.setObjectName("central_widget")
+        
+        layout = QVBoxLayout()
+        
+        layout.addWidget(self.title_bar)
 
         # Create text display
         text_display = QTextEdit()
@@ -109,7 +350,48 @@ class LogFileWindow(QMainWindow):
         except Exception as e:
             text_display.setText(f"Error reading file: {str(e)}")
 
-        self.setCentralWidget(text_display)
+        layout.addWidget(text_display)
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
+
+    def _create_title_bar(self):
+        """Create custom title bar for dragging."""
+        self.title_bar = QWidget()
+        self.title_bar.setObjectName("title_bar")
+        self.title_bar.setFixedHeight(40)
+        
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(0)
+        
+        return title_layout
+
+    def _toggle_maximize(self):
+        """Toggle between maximize and restore."""
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMaximized()
+
+    def mousePressEvent(self, event: QMouseEvent):
+        """Handle mouse press for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drag_position = event.globalPosition().toPoint()
+            self.is_dragging = True
+
+    def mouseMoveEvent(self, event: QMouseEvent):
+        """Handle mouse move for dragging."""
+        if self.is_dragging and self.drag_position is not None:
+            delta = event.globalPosition().toPoint() - self.drag_position
+            new_pos = self.pos() + delta
+            self.move(new_pos)
+            self.drag_position = event.globalPosition().toPoint()
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        """Handle mouse release for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.is_dragging = False
+            self.drag_position = None
 
 
 class TutorialWindow(QMainWindow):
@@ -119,14 +401,77 @@ class TutorialWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Tutorial")
         self.setGeometry(250, 250, 700, 500)
+        
+        # Set window flags for rounded corners, no menu bar, and drag functionality
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint | 
+            Qt.WindowType.WindowStaysOnTopHint |
+            Qt.WindowType.Tool
+        )
+        
+        # Set window attributes for rounded corners
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, False)
+        
+        # Drag functionality variables
+        self.drag_position = None
+        self.is_dragging = False
 
+        # Create custom title bar
+        title_layout = self._create_title_bar()
+
+        # Window title
+        title_label = QLabel("Tutorial")
+        title_label.setObjectName("title_label")
+        title_label.setStyleSheet("""
+            QLabel#title_label {
+                color: #4a4a4a;
+                font-weight: 600;
+                font-size: 14px;
+                padding: 0px 15px;
+                background: transparent;
+            }
+        """)
+        
+        # Window controls
+        minimize_button = QPushButton("─")
+        minimize_button.setObjectName("window_control minimize")
+        minimize_button.setFixedSize(30, 30)
+        minimize_button.clicked.connect(self.showMinimized)
+        
+        maximize_button = QPushButton("□")
+        maximize_button.setObjectName("window_control maximize")
+        maximize_button.setFixedSize(30, 30)
+        maximize_button.clicked.connect(self._toggle_maximize)
+        
+        close_button = QPushButton("✕")
+        close_button.setObjectName("window_control close")
+        close_button.setFixedSize(30, 30)
+        close_button.clicked.connect(self.close)
+        
+        # Add to layout
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        title_layout.addWidget(minimize_button)
+        title_layout.addWidget(maximize_button)
+        title_layout.addWidget(close_button)
+        
+        self.title_bar.setLayout(title_layout)
+        
+        # Create content widget
+        central_widget = QWidget()
+        central_widget.setObjectName("central_widget")
+        
+        layout = QVBoxLayout()
+        
+        layout.addWidget(self.title_bar)
+        
         # Create text display
         text_display = QTextEdit()
         text_display.setReadOnly(True)
         text_display.setObjectName("tutorial_display")
 
-        # Set placeholder tutorial text
-        tutorial_text = """Welcome to the Dataminer App Tutorial!
+        tutorial_text = """Welcome to the Unit404 Dataminer App Tutorial!
 
 1. Select Folder:
    Click the 'Select Folder' button to choose a directory containing audio files (.wav)
@@ -152,68 +497,79 @@ class TutorialWindow(QMainWindow):
    - Click the 'Cleanup' button to remove all generated files and directories
    - This will delete all txt, pdf, and log files
 
-For more help, visit the Help menu or check the documentation."""
+For more help, click the '?' button in the top-right corner or access the Help menu."""
         text_display.setText(tutorial_text)
 
-        self.setCentralWidget(text_display)
+        layout.addWidget(text_display)
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
 
+    def _toggle_maximize(self):
+        """Toggle between maximize and restore."""
+        if self.isMaximized():
+            self.showNormal()
+            self.is_maximized = False
+        else:
+            self.showMaximized()
+            self.is_maximized = True
 
-class HoverButton(QPushButton):
-    """Custom button that changes appearance on hover."""
+    def _create_title_bar(self):
+        """Create custom title bar for dragging."""
+        self.title_bar = QWidget()
+        self.title_bar.setObjectName("title_bar")
+        self.title_bar.setFixedHeight(40)
+        
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(0)
+        
+        return title_layout
 
-    def __init__(self, button_name, assets_dir, width=200, height=100):
-        super().__init__()
-        self.button_name = button_name
-        self.assets_dir = assets_dir
-        self.normal_pixmap = None
-        self.hover_pixmap = None
+    def mousePressEvent(self, event: QMouseEvent):
+        """Handle mouse press for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drag_position = event.globalPosition().toPoint()
+            self.is_dragging = True
 
-        self.setFlat(True)
-        self.setFixedSize(width, height)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+    def mouseMoveEvent(self, event: QMouseEvent):
+        """Handle mouse move for dragging."""
+        if self.is_dragging and self.drag_position is not None:
+            delta = event.globalPosition().toPoint() - self.drag_position
+            new_pos = self.pos() + delta
+            self.move(new_pos)
+            self.drag_position = event.globalPosition().toPoint()
 
-        # Remove focus rectangle
-        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.setObjectName("hover_button")
-
-        # Load pixmaps
-        normal_path = self.assets_dir / f"{button_name}_NORMAL.png"
-        hover_path = self.assets_dir / f"{button_name}_HOVER.png"
-
-        if normal_path.exists():
-            self.normal_pixmap = QPixmap(str(normal_path))
-        if hover_path.exists():
-            self.hover_pixmap = QPixmap(str(hover_path))
-
-        # Set initial icon
-        if self.normal_pixmap:
-            icon = QIcon(self.normal_pixmap)
-            self.setIcon(icon)
-            self.setIconSize(QSize(width, height))
-
-    def enterEvent(self, event: QEvent):
-        """Handle mouse enter event."""
-        if self.hover_pixmap and self.isEnabled():
-            self.setIcon(QIcon(self.hover_pixmap))
-        super().enterEvent(event)
-
-    def leaveEvent(self, event: QEvent):
-        """Handle mouse leave event."""
-        if self.normal_pixmap:
-            self.setIcon(QIcon(self.normal_pixmap))
-        super().leaveEvent(event)
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        """Handle mouse release for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.is_dragging = False
+            self.drag_position = None
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        # Get the assets directory path relative to this file
-        self.assets_dir = Path(__file__).parent.parent / "assets"
+        
+        # Set window flags for custom title bar, rounded corners, and no menu bar
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint | 
+            Qt.WindowType.WindowStaysOnTopHint |
+            Qt.WindowType.Tool
+        )
+        
+        # Set window attributes for rounded corners
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, False)
+        
+        # Drag functionality variables
+        self.drag_position = None
+        self.is_dragging = False
+        
+        # Initialize UI
         self.init_ui()
 
         # Register this window with the global progress system
         progress.set_progress_window(self)
-
         # Redirect console output to the text display
         self.console_output = ConsoleRedirector(self.console_display)
         sys.stdout = self.console_output
@@ -222,43 +578,177 @@ class MainWindow(QMainWindow):
         """Initialize the user interface."""
         self.setWindowTitle("Dataminer App")
         self.setGeometry(100, 100, 400, 300)
-
+        
+        # Create custom title bar
         # Create menubar
         self._create_menubar()
 
         # Create central widget and layout
+        main_widget = QWidget()
+        main_widget.setObjectName("main_widget")
+        
+        # Main layout with title bar
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        
+        # Create custom title bar
+        self.title_bar = QWidget()
+        self.title_bar.setObjectName("title_bar")
+        self.title_bar.setFixedHeight(40)
+        
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(0)
+        
+        # Window title
+        title_label = QLabel("Dataminer App")
+        title_label.setObjectName("title_label")
+        title_label.setStyleSheet("""
+            QLabel#title_label {
+                color: #4a4a4a;
+                font-weight: 600;
+                font-size: 14px;
+                padding: 0px 15px;
+                background: transparent;
+            }
+        """)
+        
+        # Window controls
+        minimize_button = QPushButton("─")
+        minimize_button.setObjectName("window_control minimize")
+        minimize_button.setFixedSize(30, 30)
+        minimize_button.clicked.connect(self.showMinimized)
+        
+        maximize_button = QPushButton("□")
+        maximize_button.setObjectName("window_control maximize")
+        maximize_button.setFixedSize(30, 30)
+        maximize_button.clicked.connect(self._toggle_maximize)
+        
+        close_button = QPushButton("✕")
+        close_button.setObjectName("window_control close")
+        close_button.setFixedSize(30, 30)
+        close_button.clicked.connect(self.close)
+        
+        # Add to layout
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        title_layout.addWidget(minimize_button)
+        title_layout.addWidget(maximize_button)
+        title_layout.addWidget(close_button)
+        
+        self.title_bar.setLayout(title_layout)
+        
+        # Store maximize state
+        self.is_maximized = False
+        
+        # Create content widget
         central_widget = QWidget()
         central_widget.setObjectName("central_widget")
-        self.setCentralWidget(central_widget)
+        
         layout = QVBoxLayout()
-
+        
+        # Window controls bar
+        controls_bar = QWidget()
+        controls_bar.setObjectName("controls_bar")
+        controls_layout = QHBoxLayout()
+        controls_layout.setContentsMargins(0, 0, 0, 0)
+        controls_layout.setSpacing(5)
+        
+        # Window title text
+        title_label = QLabel("Unit404 Dataminer")
+        title_label.setObjectName("window_title")
+        title_label.setStyleSheet("""
+            QLabel#window_title {
+                color: #000000;
+                font-weight: bold;
+                font-size: 14px;
+                padding: 0px 10px;
+                background: transparent;
+            }
+        """)
+        
+        # Window controls
+        minimize_button = QPushButton("─")
+        minimize_button.setObjectName("window_control minimize")
+        minimize_button.setFixedSize(25, 20)
+        minimize_button.setStyleSheet("color: #000000; font-weight: bold;")
+        minimize_button.clicked.connect(self.showMinimized)
+        
+        maximize_button = QPushButton("□")
+        maximize_button.setObjectName("window_control maximize")
+        maximize_button.setFixedSize(25, 20)
+        maximize_button.setStyleSheet("color: #000000; font-weight: bold;")
+        maximize_button.clicked.connect(self._toggle_maximize)
+        
+        close_button = QPushButton("✕")
+        close_button.setObjectName("window_control close")
+        close_button.setFixedSize(25, 20)
+        close_button.setStyleSheet("color: #000000; font-weight: bold;")
+        close_button.clicked.connect(self.close)
+        
+        # Add controls to layout
+        controls_layout.addWidget(title_label)
+        controls_layout.addStretch()
+        
+        # Help button
+        help_button = QPushButton("?")
+        help_button.setObjectName("window_control help")
+        help_button.setFixedSize(25, 20)
+        help_button.clicked.connect(self.show_help_dialog)
+        help_button.setStyleSheet("color: #000000; font-weight: bold;")
+        
+        controls_layout.addWidget(help_button)
+        controls_layout.addWidget(minimize_button)
+        controls_layout.addWidget(maximize_button)
+        controls_layout.addWidget(close_button)
+        
+        controls_bar.setLayout(controls_layout)
+        
+        # Enable mouse tracking for drag functionality
+        self.setMouseTracking(True)
+        controls_bar.setMouseTracking(True)
+        
+        layout.addWidget(controls_bar)
+        
         # Tutorial link at the top
-        tutorial_link = QLabel("Tutorial")
-        tutorial_link.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        tutorial_link.setObjectName("tutorial_link")
-        tutorial_link.setStyleSheet(
-            "color: #4caf50; text-decoration: underline; cursor: pointer; font-weight: bold;")
-        tutorial_link.setCursor(Qt.CursorShape.PointingHandCursor)
-        tutorial_link.mousePressEvent = lambda event: self.on_tutorial_clicked()
-        layout.addWidget(tutorial_link)
+        self.tutorial_link = QLabel("Tutorial")
+        self.tutorial_link.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.tutorial_link.setObjectName("tutorial_link")
+        self.tutorial_link.setStyleSheet(
+            "color: #000000; text-decoration: underline; font-weight: bold;")
+        self.tutorial_link.setCursor(Qt.CursorShape.PointingHandCursor)
+        
+        # Install event filter to handle clicks without overriding mousePressEvent
+        self.tutorial_link.installEventFilter(self)
+        
+        layout.addWidget(self.tutorial_link)
 
         # Top row: Select folder and Start buttons
-        top_buttons_layout = QHBoxLayout()
+        self.top_buttons_layout = QHBoxLayout()
 
-        # Select folder button with hover effect
-        self.select_folder_button = HoverButton(
-            "select_folder", self.assets_dir)
+        # Select folder button
+        self.select_folder_button = QPushButton("Select Folder")
+        self.select_folder_button.setObjectName("select_folder_button")
         self.select_folder_button.clicked.connect(self.on_select_folder)
-        top_buttons_layout.addWidget(self.select_folder_button)
+        self.top_buttons_layout.addWidget(self.select_folder_button)
 
-        # Start button with hover effect
-        self.start_button = HoverButton("start", self.assets_dir)
+        # Start button
+        self.start_button = QPushButton("Start")
+        self.start_button.setObjectName("start_button")
         self.start_button.clicked.connect(self.on_start)
         self.start_button_enabled = False
         self._update_start_button_state()
-        top_buttons_layout.addWidget(self.start_button)
+        self.top_buttons_layout.addWidget(self.start_button)
 
-        layout.addLayout(top_buttons_layout)
+        # Stop button
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.setObjectName("stop_button")
+        self.stop_button.clicked.connect(self.on_stop)
+        self.stop_button.setEnabled(False)
+        self.top_buttons_layout.addWidget(self.stop_button)
+
+        layout.addLayout(self.top_buttons_layout)
 
         # Status label
         self.status_label = QLabel("Ready to start")
@@ -273,6 +763,16 @@ class MainWindow(QMainWindow):
         self.directory_field.setObjectName("directory_field")
         layout.addWidget(self.directory_field)
 
+        # File type selection checkboxes (will be populated after directory selection)
+        self.file_types_label = QLabel("File Types to Convert:")
+        self.file_types_label.setObjectName("file_types_label")
+        self.file_types_label.setStyleSheet("color: #333333; font-weight: bold;")
+        layout.addWidget(self.file_types_label)
+
+        self.file_types_layout = QHBoxLayout()
+        self.file_type_checkboxes = {}
+        layout.addLayout(self.file_types_layout)
+
         # Console output display
         self.console_display = QTextEdit()
         self.console_display.setReadOnly(True)
@@ -283,60 +783,61 @@ class MainWindow(QMainWindow):
         # Progress bar
         # Progress bar label 1
         self.progress_label_1 = QLabel("Converting files to text")
-        self.progress_label_1.setObjectName("progress_label")
-        # Ensure label is visible regardless of global stylesheet
+        self.progress_label_1.setObjectName("progress_label_1")
         self.progress_label_1.setStyleSheet("color: #333333;")
         self.progress_label_1.setAlignment(Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(self.progress_label_1)
 
+        # Progress bar 1
         self.progress_bar = QProgressBar()
-        self.progress_bar.setObjectName("progress_bar")
+        self.progress_bar.setObjectName("progress_bar_1")
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(0)
-        self.progress_bar.setMinimumHeight(25)
         layout.addWidget(self.progress_bar)
 
         # Progress bar label 2
         self.progress_label_2 = QLabel("Converting text to PDF")
-        self.progress_label_2.setObjectName("progress_label")
-        # Ensure label is visible regardless of global stylesheet
+        self.progress_label_2.setObjectName("progress_label_2")
         self.progress_label_2.setStyleSheet("color: #333333;")
         self.progress_label_2.setAlignment(Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(self.progress_label_2)
 
-        # Second progress bar
+        # Progress bar 2
         self.progress_bar_2 = QProgressBar()
-        self.progress_bar_2.setObjectName("progress_bar")
+        self.progress_bar_2.setObjectName("progress_bar_2")
         self.progress_bar_2.setMinimum(0)
         self.progress_bar_2.setMaximum(100)
         self.progress_bar_2.setValue(0)
-        self.progress_bar_2.setMinimumHeight(25)
         layout.addWidget(self.progress_bar_2)
 
         # Bottom row: Show log file, Cleanup, and Exit buttons
-        bottom_buttons_layout = QHBoxLayout()
+        self.bottom_buttons_layout = QHBoxLayout()
 
-        # Show log file button with hover effect
-        self.show_log_button = HoverButton("show_log_file", self.assets_dir)
+        # Show log file button
+        self.show_log_button = QPushButton("Show Log File")
+        self.show_log_button.setObjectName("show_log_button")
         self.show_log_button.clicked.connect(self.on_show_log_file)
-        bottom_buttons_layout.addWidget(self.show_log_button)
+        self.bottom_buttons_layout.addWidget(self.show_log_button)
 
-        # Cleanup button with hover effect
-        self.cleanup_button = HoverButton(
-            "square_button", self.assets_dir, width=100, height=50)
+        # Cleanup button
+        self.cleanup_button = QPushButton("Cleanup")
+        self.cleanup_button.setObjectName("cleanup_button")
         self.cleanup_button.clicked.connect(self.on_cleanup)
-        bottom_buttons_layout.addWidget(self.cleanup_button)
+        self.bottom_buttons_layout.addWidget(self.cleanup_button)
 
-        # Exit button with hover effect
-        self.exit_button = HoverButton(
-            "close_button", self.assets_dir, width=100, height=50)
+        # Exit button
+        self.exit_button = QPushButton("Exit")
+        self.exit_button.setObjectName("exit_button")
         self.exit_button.clicked.connect(self.on_exit)
-        bottom_buttons_layout.addWidget(self.exit_button)
+        self.bottom_buttons_layout.addWidget(self.exit_button)
 
-        layout.addLayout(bottom_buttons_layout)
+        layout.addLayout(self.bottom_buttons_layout)
 
         central_widget.setLayout(layout)
+        main_layout.addWidget(central_widget)
+        main_widget.setLayout(main_layout)
+        self.setCentralWidget(main_widget)
 
     def _update_start_button_state(self):
         """Update the start button appearance based on directory selection."""
@@ -344,6 +845,13 @@ class MainWindow(QMainWindow):
             self.start_button.setEnabled(True)
         else:
             self.start_button.setEnabled(False)
+
+    def _update_button_states(self, is_processing):
+        """Update button states based on processing status."""
+        self.start_button.setEnabled(not is_processing)
+        self.stop_button.setEnabled(is_processing)
+        if is_processing:
+            self.start_button_enabled = False
 
     def set_progress(self, value):
         """Set the progress bar value (0-100)."""
@@ -386,6 +894,15 @@ class MainWindow(QMainWindow):
         license_menu.addAction("View License", self.on_license_view)
         license_menu.addAction("License Info", self.on_license_info)
 
+    def _toggle_maximize(self):
+        """Toggle between maximize and restore."""
+        if self.is_maximized:
+            self.showNormal()
+            self.is_maximized = False
+        else:
+            self.showMaximized()
+            self.is_maximized = True
+
     def on_start(self):
         """Handle start button click."""
         directory_path = self.directory_field.text()
@@ -404,14 +921,19 @@ class MainWindow(QMainWindow):
                 # Run bigman in a background thread to keep UI responsive
                 bigman_path = Path(__file__).parent.parent / \
                     "converter" / "bigman.py"
+                # Get selected file types
+                selected_file_types = [
+                    file_type for file_type, checkbox in self.file_type_checkboxes.items()
+                    if checkbox.isChecked()
+                ]
                 self.worker_thread = WorkerThread(
-                    str(bigman_path), "main", args=(directory_path,))
-                # Disable start button while worker runs
-                self.start_button.setEnabled(False)
+                    str(bigman_path), "main", args=(directory_path, selected_file_types))
+                # Disable start button and enable stop button while worker runs
+                self._update_button_states(True)
 
                 def _on_finished():
-                    # Re-enable start button
-                    self.start_button.setEnabled(True)
+                    # Re-enable start button and disable stop button
+                    self._update_button_states(False)
                     if getattr(self.worker_thread, 'exception', None):
                         self.status_label.setText(
                             f"Error: {str(self.worker_thread.exception)}")
@@ -428,9 +950,24 @@ class MainWindow(QMainWindow):
         else:
             self.status_label.setText("No valid directory selected")
 
+    def on_stop(self):
+        """Handle stop button click - interrupt the running process."""
+        if hasattr(self, 'worker_thread') and self.worker_thread.isRunning():
+            self.status_label.setText("Stopping process...")
+            print("Stopping worker thread...")
+            
+            # Terminate the worker thread
+            self.worker_thread.terminate()
+            self.worker_thread.wait(3000)  # Wait up to 3 seconds for thread to finish
+            
+            # Update UI state
+            self._update_button_states(False)
+            self.status_label.setText("Process stopped by user")
+            print("Process stopped successfully")
+
     def on_exit(self):
         """Handle exit button click."""
-        self.close()
+        QApplication.quit()
 
     def on_show_log_file(self):
         """Handle show log file button click."""
@@ -439,10 +976,26 @@ class MainWindow(QMainWindow):
         self.log_window = LogFileWindow(statfile_path)
         self.log_window.show()
 
-    def on_tutorial_clicked(self):
-        """Handle tutorial link click."""
+    def show_help_dialog(self):
+        """Show help dialog with tutorial and email options."""
+        self.help_window = HelpWindow(self)
+        self.help_window.show()
+
+    def open_tutorial_window(self):
+        """Open tutorial window."""
         self.tutorial_window = TutorialWindow()
         self.tutorial_window.show()
+
+    def eventFilter(self, obj, event):
+        """Handle events for tutorial link and specific window interactions."""
+        # Handle tutorial link click
+        if obj == self.tutorial_link and event.type() == QEvent.Type.MouseButtonPress:
+            self.tutorial_window = TutorialWindow()
+            self.tutorial_window.show()
+            return True
+        
+        # Don't interfere with other events
+        return super().eventFilter(obj, event)
 
     def on_cleanup(self):
         """Handle cleanup button click - execute cleanup.sh script."""
@@ -460,6 +1013,45 @@ class MainWindow(QMainWindow):
             self.status_label.setText(f"Error running cleanup: {str(e)}")
             print(f"Error running cleanup script: {e}")
 
+    def _update_file_type_checkboxes(self, folder_path):
+        """Scan folder, detect all file types, and create checkboxes dynamically."""
+        # Scan for file types in the directory
+        file_types_found = set()
+        try:
+            for root, dirs, files in os.walk(folder_path):
+                for file in files:
+                    file_ext = os.path.splitext(file)[1].lower()
+                    if file_ext:  # Only add if file has an extension
+                        file_types_found.add(file_ext)
+        except Exception as e:
+            print(f"Error scanning directory: {e}")
+            return
+
+        # Clear existing checkboxes
+        for checkbox in self.file_type_checkboxes.values():
+            checkbox.deleteLater()
+        self.file_type_checkboxes.clear()
+
+        # Create checkboxes only for file types found in directory
+        if file_types_found:
+            for i, file_type in enumerate(sorted(file_types_found)):
+                # Display name is the file extension without the dot, uppercase
+                display_name = file_type.lstrip('.').upper()
+                checkbox = QCheckBox(display_name)
+                checkbox.setObjectName(f"file_type_checkbox_{i}")
+                checkbox.setChecked(True)  # All selected by default
+                checkbox.setStyleSheet("color: #333333;")
+                self.file_type_checkboxes[file_type] = checkbox
+                self.file_types_layout.addWidget(checkbox)
+            print(f"Found file types: {', '.join(sorted(file_types_found))}")
+        else:
+            # No files found
+            self.no_files_label = QLabel("No files found in directory")
+            self.no_files_label.setObjectName("no_files_label")
+            self.no_files_label.setStyleSheet("color: #999999;")
+            self.file_types_layout.addWidget(self.no_files_label)
+            print("No files found in directory")
+
     def on_select_folder(self):
         """Handle select folder button click."""
         folder_path = QFileDialog.getExistingDirectory(
@@ -473,6 +1065,7 @@ class MainWindow(QMainWindow):
             self.directory_field.setText(folder_path)
             self.start_button_enabled = True
             self._update_start_button_state()
+            self._update_file_type_checkboxes(folder_path)
             print(f"Folder selected: {folder_path}")
         else:
             self.status_label.setText("No folder selected")
@@ -509,16 +1102,49 @@ class MainWindow(QMainWindow):
         self.status_label.setText("License information displayed")
         print("License info action triggered")
 
+    def mousePressEvent(self, event: QMouseEvent):
+        """Handle mouse press for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drag_position = event.globalPosition().toPoint()
+            self.is_dragging = True
+
+    def mouseMoveEvent(self, event: QMouseEvent):
+        """Handle mouse move for dragging."""
+        if self.is_dragging and self.drag_position is not None:
+            delta = event.globalPosition().toPoint() - self.drag_position
+            new_pos = self.pos() + delta
+            self.move(new_pos)
+            self.drag_position = event.globalPosition().toPoint()
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        """Handle mouse release for dragging."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.is_dragging = False
+            self.drag_position = None
+
 
 def main():
     app = QApplication(sys.argv)
-
+    
+    # Set application info to prevent "Python" in menu bar
+    app.setApplicationName("Unit404 Dataminer")
+    app.setOrganizationName("Unit404")
+    app.setOrganizationDomain("unit404.dataminer")
+    
+    # Set application icon
+    icon_path = Path(__file__).parent.parent / "assets" / "logo.png"
+    app.setWindowIcon(QIcon(str(icon_path)))
+    
     # Load stylesheet from CSS file
     css_path = Path(__file__).parent.parent / "styles" / "main.css"
     load_stylesheet(app, css_path)
 
     window = MainWindow()
     window.show()
+    
+    # Install event filter on the application to catch tutorial link events
+    app.installEventFilter(window)
+    
     sys.exit(app.exec())
 
 

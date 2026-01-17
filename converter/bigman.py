@@ -17,10 +17,30 @@ except ImportError:
         pass  # Fallback if not running from GUI
 
 
-def main(root_directory):
+def main(root_directory, file_types=None):
     print("bigman in da house")
 
+    # Default to common audio formats if not specified
+    if file_types is None:
+        file_types = [".wav", ".mp3", ".flac", ".ogg"]
+
     file_struct = utils.organize_files_by_top_directories(root_directory)
+
+    # Filter files by selected types
+    filtered_file_struct = {}
+    for directory, files in file_struct.items():
+        filtered_files = [
+            f for f in files
+            if any(f.lower().endswith(ft) for ft in file_types)
+        ]
+        if filtered_files:
+            filtered_file_struct[directory] = filtered_files
+
+    if not filtered_file_struct:
+        print(f"No files found with selected types: {file_types}")
+        return
+
+    file_struct = filtered_file_struct
 
     # Calculate total files for percentage-based progress
     total_files = sum(len(files) for files in file_struct.values())
