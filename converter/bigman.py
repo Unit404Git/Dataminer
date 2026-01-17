@@ -62,14 +62,14 @@ def main(root_directory, file_types=None):
             os.system(rm_cmd)
             os.system(f"mkdir txtfiles_{directory}")
 
-        print(f"currently working on: {directory}")
+        print(f"Currently working on: {directory}")
         file_paths = []
         for file in files:
             file_paths.append(file)
 
         to_convert = len(file_paths)
 
-        msg = f"files to convert found = {to_convert}"
+        msg = f"Files to convert found = {to_convert}"
         print(msg)
 
         total_data_size = 0

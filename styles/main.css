@@ -227,7 +227,7 @@ QProgressBar#progress_bar_2 {
 
 QProgressBar#progress_bar_1::chunk,
 QProgressBar#progress_bar_2::chunk {
-    background: #6a6a6a;
+    background: #305e2a;
     border-radius: 8px;
     margin: 2px;
 }
