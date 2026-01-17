@@ -24,6 +24,16 @@ import subprocess
 import os
 from pathlib import Path
 
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller."""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = Path(sys._MEIPASS)
+    except Exception:
+        base_path = Path(__file__).parent.parent
+    
+    return base_path / relative_path
+
 # Add converter directory to path so we can import bigman
 sys.path.insert(0, str(Path(__file__).parent.parent / "converter"))
 
@@ -88,11 +98,15 @@ class ConsoleRedirector(QObject):
 def load_stylesheet(app, css_file_path):
     """Load and apply stylesheet from CSS file."""
     try:
-        with open(css_file_path, 'r') as f:
+        css_path = get_resource_path(css_file_path)
+        with open(css_path, 'r') as f:
             stylesheet = f.read()
         app.setStyleSheet(stylesheet)
+        print(f"✅ Loaded stylesheet from {css_path}")
     except FileNotFoundError:
-        print(f"Warning: Stylesheet file not found: {css_file_path}")
+        print(f"❌ Stylesheet file not found: {css_file_path}")
+    except Exception as e:
+        print(f"❌ Error loading stylesheet: {e}")
 
 
 class HelpWindow(QMainWindow):
@@ -1132,12 +1146,11 @@ def main():
     app.setOrganizationDomain("unit404.dataminer")
     
     # Set application icon
-    icon_path = Path(__file__).parent.parent / "assets" / "logo.png"
+    icon_path = get_resource_path("assets/logo.png")
     app.setWindowIcon(QIcon(str(icon_path)))
     
     # Load stylesheet from CSS file
-    css_path = Path(__file__).parent.parent / "styles" / "main.css"
-    load_stylesheet(app, css_path)
+    load_stylesheet(app, "styles/main.css")
 
     window = MainWindow()
     window.show()

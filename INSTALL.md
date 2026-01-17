@@ -178,16 +178,71 @@ If you get a .NET Framework error:
 ## 🗑️ Uninstallation
 
 ### macOS
-1. Open `Finder` → `Applications`
-2. Drag `Dataminer` to the Trash
-3. Empty Trash to complete removal
-4. Optionally remove preferences from `~/Library/Preferences/`
+1. **Automatic Uninstall** (Recommended):
+   - Open Terminal and run: `./uninstall.sh` (from the DMG location)
+   - Or download and run the uninstall script
+
+2. **Manual Uninstall**:
+   - Open `Finder` → `Applications`
+   - Drag `Dataminer` to the Trash
+   - Empty Trash to complete removal
+   - Optionally remove preferences from `~/Library/Preferences/`
+
+3. **Complete Cleanup**:
+   ```bash
+   # Remove app
+   rm -rf "/Applications/Dataminer.app"
+   
+   # Remove preferences
+   rm -f "$HOME/Library/Preferences/com.unit404.dataminer.plist"
+   
+   # Remove app support
+   rm -rf "$HOME/Library/Application Support/Dataminer"
+   
+   # Remove cache
+   rm -rf "$HOME/Library/Caches/com.unit404.dataminer"
+   ```
 
 ### Windows
-1. Open `Settings` → `Apps` → `Apps & features`
-2. Find `Dataminer` in the list
-3. Click **"Uninstall"** and follow the prompts
-4. Or use `Control Panel` → `Programs and Features`
+1. **Automatic Uninstall** (Recommended):
+   - Open **Control Panel** → **Programs and Features**
+   - Find "Dataminer" and click **"Uninstall"**
+   - Or use the "Uninstall Dataminer" shortcut in Start Menu
+
+2. **Manual Uninstall**:
+   - Open `Settings` → `Apps` → `Apps & features`
+   - Find `Dataminer` in the list
+   - Click **"Uninstall"** and follow the prompts
+
+3. **Complete Cleanup**:
+   - Delete installation folder (usually `C:\Program Files\Dataminer`)
+   - Remove desktop shortcut
+   - Clean registry entries (optional)
+
+### Linux
+1. **Automatic Uninstall** (Recommended):
+   - Run the uninstall script: `./uninstall.sh`
+   - Or remove the AppImage: `rm Dataminer.AppImage`
+
+2. **Manual Uninstall**:
+   - Remove AppImage file
+   - Remove desktop entry: `rm ~/.local/share/applications/Dataminer.desktop`
+   - Remove desktop shortcut if created
+
+3. **Complete Cleanup**:
+   ```bash
+   # Remove desktop entry
+   rm -f "$HOME/.local/share/applications/Dataminer.desktop"
+   
+   # Remove AppImage
+   rm -f "$HOME/Dataminer.AppImage"
+   
+   # Remove desktop shortcut
+   rm -f "$HOME/Desktop/Dataminer.AppImage"
+   
+   # Remove local binary
+   rm -f "$HOME/bin/Dataminer"
+   ```
 
 ---
 

@@ -138,6 +138,9 @@ def create_web_package():
         .download-btn:hover { background: #005a8b; }
         .platform { font-weight: bold; color: #333; }
         .file-info { font-size: 0.9em; color: #666; margin: 5px 0; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 4px; margin: 10px 0; }
+        .steps { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0; }
+        .steps ol { margin: 0; padding-left: 20px; }
     </style>
 </head>
 <body>
@@ -149,6 +152,20 @@ def create_web_package():
         <p>For macOS 10.15 (Catalina) or later</p>
         <a href="Dataminer-1.0.0-macOS.dmg" class="download-btn">Download for macOS</a>
         <div class="file-info">Format: DMG Installer | Size: ~40MB</div>
+        
+        <div class="warning">
+            <strong>⚠️ macOS Security Notice:</strong> When you first open the app, you may see a security warning. This is normal for apps not distributed through the App Store.
+        </div>
+        
+        <div class="steps">
+            <strong>Installation Steps:</strong>
+            <ol>
+                <li>Download and open the DMG file</li>
+                <li>Drag Dataminer to your Applications folder</li>
+                <li><strong>Right-click</strong> the app and select "Open" (only needed once)</li>
+                <li>Click "Open" in the security dialog</li>
+            </ol>
+        </div>
     </div>
     
     <div class="download-section">
