@@ -1,0 +1,3 @@
+([('Dataminer',
+   '/Users/giusco/Documents/404/dataminer/dist/Dataminer',
+   'EXECUTABLE')],)

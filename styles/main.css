@@ -394,6 +394,15 @@ QMessageBox QPushButton:pressed {
     border: 1px solid #a0a0a0;
 }
 
+/* App logo - Rounded borders */
+QLabel[style*="logo"],
+img[src*="logo"] {
+    border-radius: 15px;
+    border: 2px solid #d0d0d0;
+    background: #f0f0f0;
+    padding: 5px;
+}
+
 /* HelpWindow buttons - Neumorphism */
 QPushButton#help_button {
     font-family: "Arial", sans-serif;
